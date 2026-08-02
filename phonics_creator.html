@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phonics & Vocabulary Worksheet Creator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .creator-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 400px;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+      z-index: 10;
+    }
+    .preview-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      background-color: #e5e7eb;
+    }
+    .a4-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 15mm;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      grid-auto-rows: min-content;
+    }
+    
+    .sidebar h2 { margin-top: 0; font-size: 20px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .btn { background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+    .btn:hover { background-color: #2563eb; }
+    .section-edit { border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #f9fafb; }
+    .section-edit h3 { margin-top: 0; font-size: 16px; color: #ef4444; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+    .form-group input, .form-group textarea { width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 3px; box-sizing: border-box; }
+    
+    /* Worksheet internal styles */
+    .ws-box { border: 2px solid #e5e7eb; border-radius: 10px; padding: 15px; }
+    .box-title { font-weight: bold; margin-bottom: 15px; font-size: 14px; display: flex; align-items: center; gap: 8px;}
+    .box-num { background: #ef4444; color: white; width: 20px; height: 20px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 12px; }
+    .box-title.blue .box-num { background: #3b82f6; }
+    .box-title.green .box-num { background: #10b981; }
+    .box-title.orange .box-num { background: #f97316; }
+    .box-title.purple .box-num { background: #8b5cf6; }
+    .box-title.teal .box-num { background: #14b8a6; }
+
+    .border-pink { border-color: #fbcfe8; }
+    .border-blue { border-color: #bfdbfe; }
+    .border-green { border-color: #a7f3d0; }
+    .border-orange { border-color: #fed7aa; }
+    .border-purple { border-color: #ddd6fe; }
+    .border-teal { border-color: #99f6e4; }
+
+    .grid-table { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+    .grid-table .img-col { font-size: 30px; text-align: center; }
+    .grid-table .options-col { display: flex; justify-content: space-around; width: 100%; border-bottom: 1px dashed #d1d5db; padding-bottom: 10px; font-size: 18px; font-weight: bold;}
+    .grid-table > div:last-child { border-bottom: none; }
+
+    /* Section 4: Missing letter */
+    .missing-row { display: flex; align-items: center; gap: 15px; margin-bottom: 15px;}
+    .missing-row .img-col { font-size: 30px; }
+    .missing-row .word-col { font-size: 18px; font-weight: bold; letter-spacing: 2px;}
+
+    /* Section 5: Match */
+    .match-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+    .match-row span { font-weight: bold; }
+    .match-row .emoji { font-size: 24px; }
+    .dot { width: 6px; height: 6px; background: black; border-radius: 50%; margin: 0 10px; }
+
+    /* Section 6: Sentence */
+    .sentence-box { text-align: center; font-size: 16px; margin-bottom: 10px;}
+    .sentence-box .keyword { color: #ef4444; font-weight: bold; }
+    .sentence-img { font-size: 50px; text-align: center;}
+
+    @media print {
+      body * { visibility: hidden; }
+      .preview-area, .preview-area * { visibility: visible; }
+      .preview-area { position: absolute; left: 0; top: 0; padding: 0; background: transparent; }
+      .a4-sheet { box-shadow: none; padding: 10mm; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="creator-container">
+    <div class="sidebar">
+      <h2>
+        Phonics Setup
+        <a href="index.html" style="font-size:12px; color:#3b82f6; text-decoration:none;">&larr; Back</a>
+      </h2>
+      
+      <div class="section-edit">
+        <h3>1. Circle Word matching Picture</h3>
+        <div class="form-group"><label>Row 1 (Emoji, Word 1, 2, 3)</label><input type="text" id="s1r1" value="🐱,bat,cat,rat"></div>
+        <div class="form-group"><label>Row 2</label><input type="text" id="s1r2" value="🏐,ball,bell,bull"></div>
+        <div class="form-group"><label>Row 3</label><input type="text" id="s1r3" value="☀️,sun,fun,bun"></div>
+      </div>
+
+      <div class="section-edit">
+        <h3>2. Circle Beginning Sound</h3>
+        <div class="form-group"><label>Row 1 (Emoji, Ltr 1, 2, 3)</label><input type="text" id="s2r1" value="🍎,a,b,c"></div>
+        <div class="form-group"><label>Row 2</label><input type="text" id="s2r2" value="🚗,c,k,g"></div>
+        <div class="form-group"><label>Row 3</label><input type="text" id="s2r3" value="🦆,d,b,p"></div>
+      </div>
+
+      <div class="section-edit">
+        <h3>4. Fill in missing letter</h3>
+        <div class="form-group"><label>Item 1 (Emoji, Word)</label><input type="text" id="s4r1" value="🐭,m _ se"></div>
+        <div class="form-group"><label>Item 2 (Emoji, Word)</label><input type="text" id="s4r2" value="🐸,fr _ g"></div>
+        <div class="form-group"><label>Item 3 (Emoji, Word)</label><input type="text" id="s4r3" value="☀️,s _ n"></div>
+      </div>
+
+      <div class="section-edit">
+        <h3>6. Read sentence and color</h3>
+        <div class="form-group"><label>Sentence 1</label><input type="text" id="s6txt1" value="The dog is in the tub."></div>
+        <div class="form-group"><label>Emoji 1</label><input type="text" id="s6img1" value="🐕🛁"></div>
+      </div>
+
+      <button class="btn" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn btn-secondary" onclick="updateView()" style="background:#10b981; margin-top:5px;">Refresh View</button>
+    </div>
+
+    <div class="preview-area">
+      <div class="a4-sheet" id="print-area">
+        
+        <!-- Section 1 -->
+        <div class="ws-box border-pink">
+          <div class="box-title"><span class="box-num">1</span> Circle the word that matches the picture.</div>
+          <div class="grid-table" id="out-s1">
+            <!-- JS -->
+          </div>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="ws-box border-blue">
+          <div class="box-title blue"><span class="box-num">2</span> Look at the picture and circle the beginning sound.</div>
+          <div class="grid-table" id="out-s2">
+             <!-- JS -->
+          </div>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="ws-box border-green">
+          <div class="box-title green"><span class="box-num">3</span> Read the word and color the correct picture.</div>
+          <div class="grid-table">
+             <div class="img-col" style="font-size:18px; font-weight:bold; text-align:left;">pen</div>
+             <div class="options-col" style="font-size:30px;"><span>📎</span><span>🖊️</span><span>✂️</span></div>
+             <div class="img-col" style="font-size:18px; font-weight:bold; text-align:left;">box</div>
+             <div class="options-col" style="font-size:30px;"><span>📦</span><span>⚽</span><span>🏀</span></div>
+          </div>
+        </div>
+
+        <!-- Section 4 -->
+        <div class="ws-box border-orange">
+          <div class="box-title orange"><span class="box-num">4</span> Fill in the missing letter.</div>
+          <div style="display: flex; justify-content: space-between;">
+            <div id="out-s4-col1"></div>
+            <div id="out-s4-col2"></div>
+          </div>
+        </div>
+
+        <!-- Section 5 -->
+        <div class="ws-box border-purple">
+          <div class="box-title purple"><span class="box-num">5</span> Match the word to the correct picture.</div>
+          <div class="match-row"><span>bag</span><div style="display:flex;flex:1"><div class="dot" style="margin-left:auto"></div><div class="dot"></div></div><span class="emoji">🗺️</span></div>
+          <div class="match-row"><span>cap</span><div style="display:flex;flex:1"><div class="dot" style="margin-left:auto"></div><div class="dot"></div></div><span class="emoji">🐭</span></div>
+          <div class="match-row"><span>rat</span><div style="display:flex;flex:1"><div class="dot" style="margin-left:auto"></div><div class="dot"></div></div><span class="emoji">🧢</span></div>
+          <div class="match-row"><span>map</span><div style="display:flex;flex:1"><div class="dot" style="margin-left:auto"></div><div class="dot"></div></div><span class="emoji">🎒</span></div>
+        </div>
+
+        <!-- Section 6 -->
+        <div class="ws-box border-teal">
+          <div class="box-title teal"><span class="box-num">6</span> Read the sentence and color the picture.</div>
+          <div style="border-bottom: 1px dashed #ccc; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="sentence-box" id="out-s6txt1">The dog is in the tub.</div>
+            <div class="sentence-img" id="out-s6img1">🐕🛁</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="sentence-box">The cat is on the mat.</div>
+            <div class="sentence-img">🐈🔲</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateView() {
+      // S1
+      let s1Html = '';
+      ['s1r1', 's1r2', 's1r3'].forEach(id => {
+        const parts = document.getElementById(id).value.split(',');
+        if (parts.length >= 4) {
+          s1Html += `<div class="img-col">${parts[0]}</div><div class="options-col"><span>${parts[1]}</span><span>${parts[2]}</span><span>${parts[3]}</span></div>`;
+        }
+      });
+      document.getElementById('out-s1').innerHTML = s1Html;
+
+      // S2
+      let s2Html = '';
+      ['s2r1', 's2r2', 's2r3'].forEach(id => {
+        const parts = document.getElementById(id).value.split(',');
+        if (parts.length >= 4) {
+          s2Html += `<div class="img-col">${parts[0]}</div><div class="options-col"><span>${parts[1]}</span><span>${parts[2]}</span><span>${parts[3]}</span></div>`;
+        }
+      });
+      document.getElementById('out-s2').innerHTML = s2Html;
+
+      // S4
+      const s4r1 = document.getElementById('s4r1').value.split(',');
+      const s4r2 = document.getElementById('s4r2').value.split(',');
+      const s4r3 = document.getElementById('s4r3').value.split(',');
+
+      if(s4r1.length >= 2) document.getElementById('out-s4-col1').innerHTML = `<div class="missing-row"><div class="img-col">${s4r1[0]}</div><div class="word-col">${s4r1[1]}</div></div>`;
+      if(s4r2.length >= 2) document.getElementById('out-s4-col2').innerHTML = `<div class="missing-row"><div class="img-col">${s4r2[0]}</div><div class="word-col">${s4r2[1]}</div></div>`;
+      if(s4r3.length >= 2) document.getElementById('out-s4-col1').innerHTML += `<div class="missing-row"><div class="img-col">${s4r3[0]}</div><div class="word-col">${s4r3[1]}</div></div>`;
+
+      // S6
+      let s6t1 = document.getElementById('s6txt1').value;
+      // Highlight "dog" and "tub" or basic keyword styling? User can use simple text.
+      document.getElementById('out-s6txt1').innerHTML = s6t1;
+      document.getElementById('out-s6img1').innerHTML = document.getElementById('s6img1').value;
+    }
+
+    // Attach listeners
+    document.querySelectorAll('input').forEach(el => el.addEventListener('input', updateView));
+
+    // Init
+    updateView();
+  </script>
+</body>
+</html>

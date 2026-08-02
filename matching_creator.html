@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matching Worksheet Creator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .creator-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 350px;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+      z-index: 10;
+    }
+    .preview-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      background-color: #e5e7eb;
+    }
+    .a4-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 15mm;
+      box-sizing: border-box;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .item-editor {
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      background: #f9fafb;
+    }
+    @keyframes flash {
+      0% { background: #dbeafe; }
+      100% { background: #f9fafb; }
+    }
+    .item-editor input {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 5px;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 3px;
+    }
+    .item-editor button {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .item-img-slot {
+      width: 100%;
+      height: 72px;
+      border: 2px dashed #d1d5db;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-bottom: 6px;
+      background: #fff;
+      overflow: hidden;
+      font-size: 30px;
+      transition: border-color 0.15s ease;
+    }
+    .item-img-slot:hover {
+      border-color: #3b82f6;
+    }
+    .item-img-slot img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .slot-hint {
+      font-size: 11px;
+      color: #9ca3af;
+      margin: -2px 0 8px;
+    }
+
+    .btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .btn:hover { background-color: #2563eb; }
+    .btn-secondary { background-color: #10b981; }
+    .btn-secondary:hover { background-color: #059669; }
+
+    /* Worksheet Styles */
+    .ws-header { text-align: center; margin-bottom: 30px; }
+    .ws-title { font-size: 30px; margin: 0; padding-bottom: 10px; }
+
+    .match-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      flex-grow: 1;
+      justify-content: center;
+      padding: 0 40px;
+    }
+    .match-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .match-left, .match-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .match-left { font-size: 32px; font-weight: 500; }
+    .match-right { font-size: 50px; }
+    .match-right img {
+      width: 55px;
+      height: 55px;
+      object-fit: contain;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: black;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Image Picker Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      width: 440px;
+      max-width: 92vw;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+    .modal-close {
+      border: none;
+      background: none;
+      font-size: 30px;
+      line-height: 1;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .modal-close:hover { color: #111; }
+    .image-selector-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .image-tab {
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      background: #f3f4f6;
+      font-size: 13px;
+      font-weight: bold;
+      color: #6b7280;
+      border: none;
+    }
+    .image-tab.active { background: #3b82f6; color: #fff; }
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      color: #64748b;
+    }
+    .upload-zone span {
+      color: #3b82f6;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+    .upload-zone p { margin: 6px 0 0; font-size: 13px; }
+    .upload-zone p.small { font-size: 12px; color: #9ca3af; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-group input[type=text] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 22px;
+      text-align: center;
+    }
+    .modal-preview {
+      margin-top: 15px;
+      text-align: center;
+      min-height: 80px;
+      border: 1px dashed #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-preview img {
+      max-width: 160px;
+      max-height: 160px;
+      object-fit: contain;
+    }
+    .modal-preview .big-emoji { font-size: 64px; line-height: 1; }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      align-items: center;
+    }
+    .modal-footer .btn { margin-top: 0; }
+    .modal-footer .btn-secondary { background-color: #6b7280; }
+    .modal-footer .btn-secondary:hover { background-color: #4b5563; }
+    .modal-hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      .preview-area, .preview-area * { visibility: visible; }
+      .preview-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        padding: 0;
+        background: transparent;
+      }
+      .a4-sheet {
+        box-shadow: none;
+        padding: 10mm;
+      }
+      .sidebar { display: none; }
+      .modal-overlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="creator-container">
+    <div class="sidebar">
+      <h2>
+        Matching Setup
+        <a href="index.html" style="font-size:12px; color:#3b82f6; text-decoration:none;">&larr; Back</a>
+      </h2>
+
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 14px; font-weight: bold;">Worksheet Title</label>
+        <input type="text" id="edit-title" value="Match the words to the pictures" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 5px; box-sizing: border-box; margin-top: 5px;">
+      </div>
+
+      <div id="items-container"></div>
+
+      <button class="btn btn-secondary" id="btn-add-item">+ Add New Item</button>
+      <button class="btn" id="btn-print" style="margin-top: 30px;">Print / Save PDF</button>
+    </div>
+
+    <div class="preview-area">
+      <div class="a4-sheet" id="print-area">
+        <div class="ws-header">
+          <h1 class="ws-title" id="out-title">Match the words to the pictures</h1>
+        </div>
+        <div class="match-container" id="out-items">
+          <!-- Dynamically generated -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Picker Modal -->
+  <div class="modal-overlay" id="image-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Select Image for Item 1</h3>
+        <button class="modal-close" id="btn-close-modal" title="Close and go to next item">&times;</button>
+      </div>
+      <div class="image-selector-tabs">
+        <button class="image-tab active" data-tab="upload">Upload Image</button>
+        <button class="image-tab" data-tab="emoji">Use Emoji</button>
+      </div>
+      <div class="tab-pane" id="tab-upload">
+        <div class="upload-zone" id="upload-dropzone">
+          <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+          </svg>
+          <p>Drag and drop your image file here or <span>browse files</span></p>
+          <p class="small">Supports JPG, PNG, WEBP, or SVG (Max 1MB)</p>
+          <input type="file" id="file-uploader" style="display: none;" accept="image/*">
+        </div>
+      </div>
+      <div class="tab-pane" id="tab-emoji" style="display: none;">
+        <div class="form-group">
+          <label>Emoji</label>
+          <input type="text" id="modal-emoji" placeholder="e.g. 👄">
+        </div>
+      </div>
+      <div class="modal-preview" id="modal-preview"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-clear-slot">Clear Image</button>
+        <button class="btn" id="btn-done-modal">Done</button>
+      </div>
+      <div class="modal-hint">Tip: Press the &times; button to close this and move to the next item automatically.</div>
+    </div>
+  </div>
+
+  <script>
+    const itemsData = [
+      { text: 'mouth', emoji: '👄', image: '' },
+      { text: 'head', emoji: '🧑', image: '' },
+      { text: 'ear', emoji: '👂', image: '' },
+      { text: 'teeth', emoji: '🦷', image: '' },
+      { text: 'hand', emoji: '✋', image: '' },
+      { text: 'foot', emoji: '🦶', image: '' },
+      { text: 'eye', emoji: '👁️', image: '' },
+      { text: 'nose', emoji: '👃', image: '' }
+    ];
+
+    let activeItemIdx = 0;
+
+    const editTitle = document.getElementById('edit-title');
+    const itemsContainer = document.getElementById('items-container');
+    const outItems = document.getElementById('out-items');
+    const outTitle = document.getElementById('out-title');
+    const modal = document.getElementById('image-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalEmoji = document.getElementById('modal-emoji');
+    const modalPreview = document.getElementById('modal-preview');
+    const dropzone = document.getElementById('upload-dropzone');
+    const fileInput = document.getElementById('file-uploader');
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    editTitle.addEventListener('input', () => {
+      outTitle.textContent = editTitle.value;
+    });
+
+    // ----- Sidebar -----
+    function renderSidebar() {
+      itemsContainer.innerHTML = '';
+      itemsData.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'item-editor';
+        div.innerHTML = `
+          <div style="font-weight:bold; margin-bottom:5px;">Item ${index + 1}</div>
+          <div class="item-img-slot" data-idx="${index}"></div>
+          <div class="slot-hint">Click the box above to upload / change the picture</div>
+          <input type="text" placeholder="Word" data-idx="${index}" data-key="text" value="${esc(item.text)}">
+          <input type="text" placeholder="Emoji" data-idx="${index}" data-key="emoji" value="${esc(item.emoji)}">
+          <button class="remove-btn" data-idx="${index}">Remove</button>
+        `;
+        const slot = div.querySelector('.item-img-slot');
+        if (item.image) {
+          slot.innerHTML = `<img src="${item.image}" alt="item picture">`;
+        } else {
+          slot.textContent = item.emoji || '🖼️';
+        }
+        slot.title = 'Click to select / upload image';
+        itemsContainer.appendChild(div);
+      });
+      renderWorksheet();
+    }
+
+    // ----- Worksheet preview -----
+    function renderWorksheet() {
+      outItems.innerHTML = '';
+      itemsData.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'match-row';
+        const rightContent = item.image
+          ? `<img src="${item.image}" alt="">`
+          : esc(item.emoji || '?');
+        row.innerHTML = `
+          <div class="match-left">
+            <span>${esc(item.text)}</span>
+            <div class="dot"></div>
+          </div>
+          <div class="match-right">
+            <div class="dot"></div>
+            <span>${rightContent}</span>
+          </div>
+        `;
+        outItems.appendChild(row);
+      });
+    }
+
+    function updateItem(index, key, value) {
+      itemsData[index][key] = value;
+      renderWorksheet();
+    }
+
+    function addItem() {
+      itemsData.push({ text: 'new word', emoji: '✨', image: '' });
+      renderSidebar();
+      const editors = itemsContainer.querySelectorAll('.item-editor');
+      const last = editors[editors.length - 1];
+      if (last) {
+        last.style.animation = 'flash 1s ease';
+        last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const word = last.querySelector('input[data-key="text"]');
+        if (word) word.focus();
+      }
+    }
+
+    function removeItem(index) {
+      itemsData.splice(index, 1);
+      renderSidebar();
+    }
+
+    // ----- Image picker modal -----
+    function openModal(index) {
+      activeItemIdx = index;
+      const item = itemsData[index];
+      modalTitle.textContent = `Select Image for Item ${index + 1}`;
+      modalEmoji.value = item.emoji;
+      switchTab(item.image ? 'upload' : 'emoji');
+      updateModalPreview();
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+    }
+
+    // Close modal and automatically open the next item (next page)
+    function closeModalAndNext() {
+      modal.classList.remove('active');
+      if (activeItemIdx < itemsData.length - 1) {
+        openModal(activeItemIdx + 1);
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.image-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+      document.getElementById('tab-upload').style.display = tab === 'upload' ? 'block' : 'none';
+      document.getElementById('tab-emoji').style.display = tab === 'emoji' ? 'block' : 'none';
+    }
+
+    function updateModalPreview() {
+      const item = itemsData[activeItemIdx];
+      if (item.image) {
+        modalPreview.innerHTML = `<img src="${item.image}" alt="preview">`;
+      } else {
+        modalPreview.innerHTML = `<span class="big-emoji">${esc(item.emoji || '?')}</span>`;
+      }
+    }
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        alert('Please choose an image file.');
+        return;
+      }
+      if (file.size > 1024 * 1024) {
+        alert('Image is too large. Maximum size is 1MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const item = itemsData[activeItemIdx];
+        item.image = ev.target.result;
+        renderSidebar();
+        renderWorksheet();
+        updateModalPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Modal event wiring
+    document.getElementById('btn-close-modal').addEventListener('click', closeModalAndNext);
+    document.getElementById('btn-done-modal').addEventListener('click', closeModal);
+    document.getElementById('btn-clear-slot').addEventListener('click', () => {
+      const item = itemsData[activeItemIdx];
+      item.image = '';
+      renderSidebar();
+      renderWorksheet();
+      updateModalPreview();
+    });
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.style.borderColor = '#3b82f6';
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.style.borderColor = '';
+    });
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.style.borderColor = '';
+      handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', e => {
+      handleFile(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    document.querySelectorAll('.image-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    modalEmoji.addEventListener('input', () => {
+      const item = itemsData[activeItemIdx];
+      item.emoji = modalEmoji.value;
+      item.image = '';
+      renderSidebar();
+      renderWorksheet();
+      updateModalPreview();
+    });
+
+    // Close modal when clicking outside content
+    modal.addEventListener('click', e => {
+      if (e.target === modal) closeModal();
+    });
+
+    // ----- Event delegation for the sidebar (works for dynamically added items) -----
+    itemsContainer.addEventListener('input', e => {
+      const input = e.target.closest('input[data-idx]');
+      if (!input) return;
+      const idx = parseInt(input.dataset.idx, 10);
+      const key = input.dataset.key;
+      if (key === 'text') itemsData[idx].text = input.value;
+      if (key === 'emoji') itemsData[idx].emoji = input.value;
+      renderWorksheet();
+    });
+
+    itemsContainer.addEventListener('click', e => {
+      const btn = e.target.closest('.remove-btn');
+      if (btn) {
+        removeItem(parseInt(btn.dataset.idx, 10));
+        return;
+      }
+      const slot = e.target.closest('.item-img-slot');
+      if (slot) {
+        openModal(parseInt(slot.dataset.idx, 10));
+      }
+    });
+
+    document.getElementById('btn-add-item').addEventListener('click', addItem);
+    document.getElementById('btn-print').addEventListener('click', () => window.print());
+
+    // Initial render
+    renderSidebar();
+  </script>
+</body>
+</html>

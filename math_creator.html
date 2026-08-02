@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Worksheet Creator</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Specific styles for the Math Creator to override or extend global style.css */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .creator-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 350px;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+      z-index: 10;
+    }
+    .preview-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      background-color: #e5e7eb;
+    }
+    .a4-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 15mm;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .ws-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .ws-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: #ef4444; /* red */
+      margin: 0;
+    }
+    .ws-subtitle {
+      background-color: #a855f7; /* purple */
+      color: white;
+      display: inline-block;
+      padding: 5px 20px;
+      border-radius: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .ws-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      border: 1px solid #d1d5db;
+      padding: 10px 20px;
+      border-radius: 25px;
+    }
+    .ws-info span {
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .ws-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .ws-box {
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+      min-height: 150px;
+      cursor: pointer;
+      transition: box-shadow 0.15s ease;
+    }
+    .ws-box:hover {
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    .ws-box.selected {
+      outline: 3px solid #6366f1;
+      outline-offset: 2px;
+    }
+    .box-title {
+      font-weight: bold;
+      color: #10b981; /* green */
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .box-title.pink { color: #ec4899; }
+    .box-title.blue { color: #3b82f6; }
+    .box-title.orange { color: #f97316; }
+    .box-title.purple { color: #8b5cf6; }
+    .box-title.teal { color: #14b8a6; }
+
+    /* Count items */
+    .count-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .count-emojis {
+      display: flex;
+      gap: 5px;
+      font-size: 20px;
+      flex-wrap: wrap;
+    }
+    .empty-box {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #cbd5e1;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    /* Missing numbers */
+    .missing-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      align-items: center;
+    }
+    .missing-box {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #f9a8d4;
+      border-radius: 5px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    /* Addition */
+    .addition-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .add-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Shapes */
+    .shapes-grid {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 10px;
+      text-align: center;
+    }
+    .shape-item svg {
+      width: 40px;
+      height: 40px;
+      stroke: black;
+      stroke-width: 2;
+      fill: none;
+    }
+    .shape-name {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    /* Word problems */
+    .problem-item {
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-group textarea {
+      resize: vertical;
+    }
+    .btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background-color: #2563eb;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .btn-small {
+      width: auto;
+      padding: 5px 10px;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .btn-group select {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+    }
+    .btn-group .btn {
+      width: auto;
+      margin-top: 0;
+      white-space: nowrap;
+    }
+
+    /* Card list + config */
+    .section-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .sec-chip {
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #374151;
+    }
+    .sec-chip.on {
+      background: #6366f1;
+      color: #fff;
+      border-color: #6366f1;
+    }
+    .cfg-list {
+      margin-bottom: 8px;
+    }
+    .cfg-row-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .cfg-row-line input[type=number] {
+      width: 70px;
+      flex-shrink: 0;
+    }
+    .cfg-sep {
+      color: #9ca3af;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .cfg-del {
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      color: #dc2626;
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .cfg-del:hover {
+      background: #fee2e2;
+    }
+    .shape-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .shape-chip {
+      border: 1px solid #d1d5db;
+      background: #fff;
+      padding: 6px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      text-transform: capitalize;
+    }
+    .shape-chip.on {
+      background: #8b5cf6;
+      color: #fff;
+      border-color: #8b5cf6;
+    }
+    .hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .preview-area, .preview-area * {
+        visibility: visible;
+      }
+      .preview-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        padding: 0;
+        background: transparent;
+      }
+      .a4-sheet {
+        box-shadow: none;
+        padding: 10mm;
+      }
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="creator-container">
+    <div class="sidebar">
+      <h2>
+        Math Setup
+        <a href="index.html" style="font-size:12px; color:#3b82f6; text-decoration:none;">&larr; Back</a>
+      </h2>
+
+      <div class="form-group">
+        <label>Main Title</label>
+        <input type="text" id="edit-title" value="Math Worksheet">
+      </div>
+      <div class="form-group">
+        <label>Subtitle / Grade</label>
+        <input type="text" id="edit-subtitle" value="UKG">
+      </div>
+      <div class="form-group">
+        <label>Tagline</label>
+        <input type="text" id="edit-tagline" value="Let's enjoy math!">
+      </div>
+      <div class="form-group">
+        <label>Top-left Decor Emoji</label>
+        <input type="text" id="edit-deco-l" value="⭐">
+      </div>
+      <div class="form-group">
+        <label>Top-right Decor Emoji</label>
+        <input type="text" id="edit-deco-r" value="🌈">
+      </div>
+      <div class="form-group">
+        <label>Name Label</label>
+        <input type="text" id="edit-name-label" value="Name: ______________________">
+      </div>
+      <div class="form-group">
+        <label>Date Label</label>
+        <input type="text" id="edit-date-label" value="Date: ________________">
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+      <div class="form-group">
+        <label>Cards / Sections (click a card on the sheet to edit it)</label>
+        <div class="section-list" id="section-list"></div>
+        <div class="btn-group">
+          <select id="add-card-type">
+            <option value="count">Count &amp; Write</option>
+            <option value="missing">Missing Numbers</option>
+            <option value="compare">Compare</option>
+            <option value="addition">Addition</option>
+            <option value="shapes">Shapes</option>
+            <option value="word">Word Problems</option>
+          </select>
+          <button class="btn" id="btn-add-card">+ New Card</button>
+        </div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+      <div id="section-config"></div>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+      <button class="btn" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn btn-secondary" onclick="resetDefaults()">Reset to Defaults</button>
+    </div>
+
+    <div class="preview-area">
+      <div class="a4-sheet" id="print-area">
+        <div class="ws-header">
+          <div style="position: absolute; top: 15mm; left: 15mm; font-size: 30px;" id="out-deco-l">⭐</div>
+          <div style="position: absolute; top: 15mm; right: 15mm; font-size: 30px;" id="out-deco-r">🌈</div>
+          <h1 class="ws-title" id="out-title">Math Worksheet <span style="color:#f472b6">1</span><span style="color:#4ade80">2</span><span style="color:#60a5fa">3</span></h1>
+          <div class="ws-subtitle" id="out-subtitle">UKG</div>
+          <div id="out-tagline" style="margin-top: 5px; color: #3b82f6; font-weight: bold; font-size: 14px;">Let's enjoy math!</div>
+
+          <div class="ws-info">
+            <span id="out-name-label">Name: ______________________</span>
+            <span id="out-date-label">Date: ________________</span>
+          </div>
+        </div>
+
+        <div class="ws-grid" id="print-grid">
+          <!-- Cards rendered dynamically by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TYPES = [
+      { value: 'count', label: 'Count & Write' },
+      { value: 'missing', label: 'Missing Numbers' },
+      { value: 'compare', label: 'Compare' },
+      { value: 'addition', label: 'Addition' },
+      { value: 'shapes', label: 'Shapes' },
+      { value: 'word', label: 'Word Problems' }
+    ];
+
+    const DEFAULT_TITLES = {
+      count: 'Count and write.',
+      missing: 'Write the missing numbers.',
+      compare: 'Write >, < or = in the box.',
+      addition: 'Addition - Add and write the answers.',
+      shapes: 'Identify and color the shapes.',
+      word: 'Solve the word problems.'
+    };
+
+    const COLORS = {
+      count:    { border: '#a7f3d0', text: 'green' },
+      missing:  { border: '#fbcfe8', text: 'pink' },
+      compare:  { border: '#bfdbfe', text: 'blue' },
+      addition: { border: '#fed7aa', text: 'orange' },
+      shapes:   { border: '#ddd6fe', text: 'purple' },
+      word:     { border: '#99f6e4', text: 'teal' }
+    };
+
+    const SHAPE_SVGS = {
+      circle:    '<svg><circle cx="20" cy="20" r="18"/></svg>',
+      square:    '<svg><rect x="2" y="2" width="36" height="36"/></svg>',
+      triangle:  '<svg><polygon points="20,2 38,38 2,38"/></svg>',
+      rectangle: '<svg><rect x="2" y="10" width="36" height="20"/></svg>',
+      star:      '<svg><polygon points="20,2 25,14 38,14 28,22 32,36 20,28 8,36 12,22 2,14 15,14"/></svg>'
+    };
+
+    function defaultSections() {
+      return [
+        { id: 's1', type: 'count', title: 'Count and write.', emoji: '🍎', rows: [6, 7, 5, 8] },
+        { id: 's2', type: 'missing', title: 'Write the missing numbers.', values: [1, 2, null, 4, 5, 6, 7, null, 9, 10, 11, null, 13, 14, 15] },
+        { id: 's3', type: 'compare', title: 'Write >, < or = in the box.', emoji: '⭐', rows: [{ l: 3, r: 2 }, { l: 4, r: 5 }, { l: 3, r: 3 }, { l: 5, r: 4 }] },
+        { id: 's4', type: 'addition', title: 'Addition - Add and write the answers.', problems: [['1', '1'], ['2', '2'], ['3', '3'], ['4', '2'], ['2', '3'], ['1', '4'], ['3', '2'], ['4', '3']] },
+        { id: 's5', type: 'shapes', title: 'Identify and color the shapes.', shapes: ['circle', 'square', 'triangle', 'rectangle', 'star'] },
+        { id: 's6', type: 'word', title: 'Solve the word problems.', problems: [
+          'Riya has 3 balloons. Her brother gives her 2 more. How many balloons does she have now?',
+          'There are 4 birds on a tree. 2 birds fly away. How many birds are left?'
+        ] }
+      ];
+    }
+
+    function normalizeSection(s) {
+      if (!s.title) s.title = DEFAULT_TITLES[s.type] || '';
+      switch (s.type) {
+        case 'count':
+          if (!s.emoji) s.emoji = '🍎';
+          if (!Array.isArray(s.rows) || !s.rows.length) s.rows = [6, 7, 5, 8];
+          break;
+        case 'missing':
+          if (!Array.isArray(s.values) || !s.values.length) s.values = [1, 2, null, 4, 5, 6, 7, null, 9, 10, 11, null, 13, 14, 15];
+          break;
+        case 'compare':
+          if (!s.emoji) s.emoji = '⭐';
+          if (!Array.isArray(s.rows) || !s.rows.length) s.rows = [{ l: 3, r: 2 }, { l: 4, r: 5 }, { l: 3, r: 3 }, { l: 5, r: 4 }];
+          break;
+        case 'addition':
+          if (!Array.isArray(s.problems) || !s.problems.length) s.problems = [['1', '1'], ['2', '2'], ['3', '3'], ['4', '2'], ['2', '3'], ['1', '4'], ['3', '2'], ['4', '3']];
+          break;
+        case 'shapes':
+          if (!Array.isArray(s.shapes) || !s.shapes.length) s.shapes = ['circle', 'square', 'triangle', 'rectangle', 'star'];
+          break;
+        case 'word':
+          if (!Array.isArray(s.problems) || !s.problems.length) s.problems = [
+            'Riya has 3 balloons. Her brother gives her 2 more. How many balloons does she have now?',
+            'There are 4 birds on a tree. 2 birds fly away. How many birds are left?'
+          ];
+          break;
+      }
+      return s;
+    }
+
+    let sections = defaultSections().map(normalizeSection);
+    let selectedId = sections[0].id;
+
+    function esc(str) {
+      return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function q(id) { return document.getElementById(id); }
+    function val(id) { return q(id).value; }
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    // ----- Header -----
+    function updateHeader() {
+      q('out-title').innerHTML = esc(val('edit-title')) + ' <span style="color:#f472b6">1</span><span style="color:#4ade80">2</span><span style="color:#60a5fa">3</span>';
+      q('out-subtitle').textContent = val('edit-subtitle');
+      q('out-tagline').textContent = val('edit-tagline');
+      q('out-deco-l').textContent = val('edit-deco-l');
+      q('out-deco-r').textContent = val('edit-deco-r');
+      q('out-name-label').textContent = val('edit-name-label');
+      q('out-date-label').textContent = val('edit-date-label');
+    }
+
+    // ----- Card body rendering -----
+    function renderCardBody(s) {
+      switch (s.type) {
+        case 'count': {
+          const e = s.emoji || '';
+          return s.rows.map(n => `<div class="count-row"><div class="count-emojis">${e.repeat(n)}</div><div class="empty-box"></div></div>`).join('');
+        }
+        case 'missing': {
+          return `<div class="missing-grid">${s.values.map(v => (v == null || v === '') ? '<span class="missing-box"></span>' : `<div>${esc(v)}</div>`).join('')}</div>`;
+        }
+        case 'compare': {
+          const e = s.emoji || '';
+          return s.rows.map(r => `<div class="count-row"><div class="count-emojis comp-left">${e.repeat(r.l)}</div><div class="empty-box" style="border-color:#bfdbfe"></div><div class="count-emojis comp-right">${e.repeat(r.r)}</div></div>`).join('');
+        }
+        case 'addition': {
+          const probs = s.problems;
+          const half = Math.ceil(probs.length / 2);
+          const col = arr => `<div>${arr.map(p => `<div class="add-row">${esc(p[0])} + ${esc(p[1])} = <div class="empty-box" style="border-color:#fed7aa"></div></div>`).join('')}</div>`;
+          return `<div class="addition-grid">${col(probs.slice(0, half))}${col(probs.slice(half))}</div>`;
+        }
+        case 'shapes': {
+          const items = s.shapes.map(n => `<div class="shape-item">${SHAPE_SVGS[n] || ''}<div class="shape-name">${esc(n)}</div></div>`).join('');
+          return `<div class="shapes-grid">${items || '<p style="color:#999;font-size:12px;">No shapes selected</p>'}</div>`;
+        }
+        case 'word': {
+          return s.problems.map((p, i) => `<div class="problem-item"><strong>${i + 1}.</strong> <span>${esc(p)}</span><div class="empty-box" style="float:right;border-color:#99f6e4"></div><div style="clear:both"></div></div>`).join('');
+        }
+      }
+      return '';
+    }
+
+    // ----- Preview -----
+    function renderPreview() {
+      const grid = q('print-grid');
+      grid.innerHTML = '';
+      sections.forEach((s, i) => {
+        const color = COLORS[s.type];
+        const box = document.createElement('div');
+        box.className = 'ws-box';
+        if (s.id === selectedId) box.classList.add('selected');
+        box.style.borderColor = color.border;
+        box.dataset.id = s.id;
+        box.title = 'Click to edit this card';
+        box.innerHTML = `<div class="box-title ${color.text}">${i + 1}. ${esc(s.title)}</div>`;
+        const body = document.createElement('div');
+        body.innerHTML = renderCardBody(s);
+        box.appendChild(body);
+        box.addEventListener('click', () => selectCard(s.id));
+        grid.appendChild(box);
+      });
+    }
+
+    function renderSectionList() {
+      const list = q('section-list');
+      list.innerHTML = '';
+      sections.forEach((s, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sec-chip' + (s.id === selectedId ? ' on' : '');
+        b.textContent = `${i + 1}. ${s.title}`;
+        b.title = 'Edit this card';
+        b.addEventListener('click', () => selectCard(s.id));
+        list.appendChild(b);
+      });
+    }
+
+    function selectCard(id) {
+      selectedId = id;
+      renderConfig();
+      updateView();
+    }
+
+    function updateView() {
+      updateHeader();
+      renderPreview();
+      renderSectionList();
+    }
+
+    // ----- Config panel -----
+    function typeConfigHtml(s) {
+      switch (s.type) {
+        case 'count':
+          return `
+            <div class="form-group"><label>Emoji</label><input type="text" id="cfg-emoji"></div>
+            <div class="form-group"><label>Rows (count per row)</label>
+              <div class="cfg-list" id="cfg-count-rows">
+                ${s.rows.map((n, i) => `<div class="cfg-row-line"><input type="number" min="1" max="20" class="cfg-count-n" data-i="${i}" value="${n}"><button type="button" class="cfg-del" data-i="${i}" title="Remove row">✕</button></div>`).join('')}
+              </div>
+              <button type="button" class="btn btn-secondary btn-small" id="cfg-count-add">+ Add Row</button>
+            </div>`;
+        case 'missing':
+          return `
+            <div class="form-group"><label>Numbers (comma-separated, leave blank for an empty box)</label>
+              <textarea id="cfg-missing" rows="4"></textarea>
+            </div>`;
+        case 'compare':
+          return `
+            <div class="form-group"><label>Emoji</label><input type="text" id="cfg-emoji"></div>
+            <div class="form-group"><label>Compare rows (left vs right)</label>
+              <div class="cfg-list" id="cfg-compare-rows">
+                ${s.rows.map((r, i) => `<div class="cfg-row-line"><input type="number" min="0" max="20" class="cfg-compare-l" data-i="${i}" value="${r.l}"><span class="cfg-sep">vs</span><input type="number" min="0" max="20" class="cfg-compare-r" data-i="${i}" value="${r.r}"><button type="button" class="cfg-del" data-i="${i}" title="Remove row">✕</button></div>`).join('')}
+              </div>
+              <button type="button" class="btn btn-secondary btn-small" id="cfg-compare-add">+ Add Row</button>
+            </div>`;
+        case 'addition':
+          return `
+            <div class="form-group"><label>Problems (one per line, e.g. "1 + 1")</label>
+              <textarea id="cfg-addition" rows="8"></textarea>
+            </div>`;
+        case 'shapes':
+          return `
+            <div class="form-group"><label>Shapes (click to toggle on/off)</label>
+              <div class="shape-chips" id="cfg-shapes">
+                ${Object.keys(SHAPE_SVGS).map(n => `<button type="button" class="shape-chip${s.shapes.includes(n) ? ' on' : ''}" data-shape="${n}">${n}</button>`).join('')}
+              </div>
+            </div>`;
+        case 'word':
+          return `
+            <div class="form-group"><label>Problems (one per line)</label>
+              <textarea id="cfg-word" rows="6"></textarea>
+            </div>`;
+      }
+      return '';
+    }
+
+    function renderConfig() {
+      const section = sections.find(s => s.id === selectedId);
+      const cfg = q('section-config');
+      if (!section) {
+        cfg.innerHTML = '<p style="color:#999;font-size:13px;">No card selected.</p>';
+        return;
+      }
+
+      cfg.innerHTML = `
+        <h3 style="margin:0 0 10px; font-size:15px;">Edit Card</h3>
+        <div class="form-group">
+          <label>Card Type</label>
+          <select id="cfg-type">${TYPES.map(t => `<option value="${t.value}"${t.value === section.type ? ' selected' : ''}>${t.label}</option>`).join('')}</select>
+        </div>
+        <div class="form-group">
+          <label>Card Title (number is added automatically)</label>
+          <input type="text" id="cfg-title">
+        </div>
+        ${typeConfigHtml(section)}
+        <button type="button" class="btn btn-danger" id="btn-del-card">Delete This Card</button>
+      `;
+
+      q('cfg-type').value = section.type;
+      q('cfg-title').value = section.title;
+      if (section.type === 'count') q('cfg-emoji').value = section.emoji;
+      if (section.type === 'compare') q('cfg-emoji').value = section.emoji;
+      if (section.type === 'missing') q('cfg-missing').value = section.values.map(v => v == null ? '' : v).join(',');
+      if (section.type === 'addition') q('cfg-addition').value = section.problems.map(p => p.join(' + ')).join('\n');
+      if (section.type === 'word') q('cfg-word').value = section.problems.join('\n');
+
+      bindConfig(section);
+    }
+
+    function bindConfig(section) {
+      q('cfg-type').addEventListener('change', () => {
+        section.type = q('cfg-type').value;
+        normalizeSection(section);
+        renderConfig();
+        updateView();
+      });
+
+      q('cfg-title').addEventListener('input', () => {
+        section.title = q('cfg-title').value;
+        updateView();
+      });
+
+      q('btn-del-card').addEventListener('click', () => deleteCard());
+
+      const cfg = q('section-config');
+
+      if (section.type === 'count') {
+        q('cfg-emoji').addEventListener('input', () => { section.emoji = q('cfg-emoji').value; updateView(); });
+        cfg.querySelectorAll('.cfg-count-n').forEach(inp => {
+          inp.addEventListener('input', () => {
+            section.rows[+inp.dataset.i] = clamp(+inp.value || 1, 1, 20);
+            updateView();
+          });
+        });
+        cfg.querySelectorAll('.cfg-del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            section.rows.splice(+btn.dataset.i, 1);
+            renderConfig();
+            updateView();
+          });
+        });
+        q('cfg-count-add').addEventListener('click', () => {
+          section.rows.push(6);
+          renderConfig();
+          updateView();
+        });
+      }
+
+      if (section.type === 'missing') {
+        q('cfg-missing').addEventListener('input', () => {
+          section.values = q('cfg-missing').value.split(',').map(x => {
+            const t = x.trim();
+            return t === '' ? null : t;
+          });
+          updateView();
+        });
+      }
+
+      if (section.type === 'compare') {
+        q('cfg-emoji').addEventListener('input', () => { section.emoji = q('cfg-emoji').value; updateView(); });
+        cfg.querySelectorAll('.cfg-compare-l, .cfg-compare-r').forEach(inp => {
+          inp.addEventListener('input', () => {
+            const row = section.rows[+inp.dataset.i];
+            const n = clamp(+inp.value || 0, 0, 20);
+            if (inp.classList.contains('cfg-compare-l')) row.l = n; else row.r = n;
+            updateView();
+          });
+        });
+        cfg.querySelectorAll('.cfg-del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            section.rows.splice(+btn.dataset.i, 1);
+            renderConfig();
+            updateView();
+          });
+        });
+        q('cfg-compare-add').addEventListener('click', () => {
+          section.rows.push({ l: 3, r: 2 });
+          renderConfig();
+          updateView();
+        });
+      }
+
+      if (section.type === 'addition') {
+        q('cfg-addition').addEventListener('input', () => {
+          section.problems = q('cfg-addition').value.split('\n')
+            .map(line => line.split('+').map(x => x.trim()))
+            .filter(p => p.length === 2 && p.every(x => x !== ''));
+          updateView();
+        });
+      }
+
+      if (section.type === 'shapes') {
+        cfg.querySelectorAll('.shape-chip').forEach(ch => {
+          ch.addEventListener('click', () => {
+            const name = ch.dataset.shape;
+            const idx = section.shapes.indexOf(name);
+            if (idx >= 0) section.shapes.splice(idx, 1); else section.shapes.push(name);
+            ch.classList.toggle('on');
+            updateView();
+          });
+        });
+      }
+
+      if (section.type === 'word') {
+        q('cfg-word').addEventListener('input', () => {
+          section.problems = q('cfg-word').value.split('\n').map(x => x.trim()).filter(x => x !== '');
+          updateView();
+        });
+      }
+    }
+
+    // ----- Actions -----
+    function addCard() {
+      const type = q('add-card-type').value;
+      const s = normalizeSection({ id: 's-' + Date.now(), type, title: DEFAULT_TITLES[type] });
+      sections.push(s);
+      selectedId = s.id;
+      renderConfig();
+      updateView();
+    }
+
+    function deleteCard() {
+      if (sections.length <= 1) {
+        alert('You need at least one card on the sheet.');
+        return;
+      }
+      sections = sections.filter(s => s.id !== selectedId);
+      selectedId = sections[0].id;
+      renderConfig();
+      updateView();
+    }
+
+    function resetDefaults() {
+      q('edit-title').value = 'Math Worksheet';
+      q('edit-subtitle').value = 'UKG';
+      q('edit-tagline').value = "Let's enjoy math!";
+      q('edit-deco-l').value = '⭐';
+      q('edit-deco-r').value = '🌈';
+      q('edit-name-label').value = 'Name: ______________________';
+      q('edit-date-label').value = 'Date: ________________';
+      sections = defaultSections().map(normalizeSection);
+      selectedId = sections[0].id;
+      renderConfig();
+      updateView();
+    }
+
+    // ----- Wire up header inputs -----
+    ['edit-title', 'edit-subtitle', 'edit-tagline', 'edit-deco-l', 'edit-deco-r', 'edit-name-label', 'edit-date-label']
+      .forEach(id => {
+        q(id).addEventListener('input', updateHeader);
+      });
+
+    q('btn-add-card').addEventListener('click', addCard);
+
+    // ----- Initial render -----
+    renderConfig();
+    updateView();
+  </script>
+</body>
+</html>

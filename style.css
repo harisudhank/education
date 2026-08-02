@@ -395,12 +395,24 @@ h1, h2, h3, h4, h5, h6 {
   display: none; /* Controlled by JS toggle */
   flex: 1;
   grid-template-columns: 420px 1fr;
-  height: calc(100vh - 73px);
+  min-height: 0;
   overflow: hidden;
 }
 
 .editor-view.active {
   display: grid;
+}
+
+/* Constrain the app to the viewport while editing so the sidebar and
+   workspace each scroll on their own instead of scrolling the whole page */
+body.editor-mode {
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.editor-mode .app-container {
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Left Sidebar - Controls */
@@ -409,6 +421,7 @@ h1, h2, h3, h4, h5, h6 {
   border-right: 1px solid var(--border-color);
   padding: 1.5rem;
   overflow-y: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -630,6 +643,7 @@ h1, h2, h3, h4, h5, h6 {
 .editor-workspace {
   background-color: #e2e8f0;
   overflow: auto;
+  min-height: 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;

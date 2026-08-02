@@ -893,10 +893,12 @@ function setView(viewName) {
   if (viewName === "dashboard") {
     dashboard.style.display = "block";
     editor.classList.remove("active");
+    document.body.classList.remove("editor-mode");
     navbarActions.innerHTML = "";
   } else if (viewName === "editor") {
     dashboard.style.display = "none";
     editor.classList.add("active");
+    document.body.classList.add("editor-mode");
     
     // Inject editor specific navbar actions
     navbarActions.innerHTML = `
